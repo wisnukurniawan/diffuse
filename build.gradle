@@ -1,3 +1,5 @@
+import org.gradle.internal.jvm.Jvm
+
 buildscript {
   repositories {
     mavenCentral()
@@ -27,16 +29,26 @@ repositories {
   mavenCentral()
   google()
   jcenter()
+
+  // TODO remove https://youtrack.jetbrains.com/issue/KT-27991
+  maven { url "https://kotlin.bintray.com/kotlinx" }
+}
+
+configurations {
+  r8
 }
 
 dependencies {
+  def r8Version = 'com.android.tools:r8:1.3.52'
+
   implementation 'com.github.ajalt:clikt:1.5.0'
   implementation 'com.jakewharton.android.repackaged:dalvik-dx:9.0.0_r3'
-  implementation 'com.android.tools:r8:1.0.37'
+  implementation r8Version
   implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.3.21'
   testImplementation 'junit:junit:4.12'
   testImplementation 'com.google.guava:guava:26.0-jre'
   testImplementation 'com.google.truth:truth:0.42'
+  r8 r8Version
 }
 
 compileKotlin {
@@ -71,20 +83,35 @@ task fatMembersJar(type: Jar, dependsOn: 'compileJava') {
   }
 }
 
+def dietMembersFile = new File(buildDir, "libs/dex-member-list-shrunk.jar")
+def dietMembersJar = tasks.create('dietMembersJar', JavaExec) {
+  classpath configurations.r8
+
+  main = 'com.android.tools.r8.R8'
+  args = [
+      '--lib', new File(Jvm.current().jre.homeDir, "lib/rt.jar").getAbsolutePath(), // TODO restricts to JDK 8
+      '--release',
+      '--classfile',
+      '--output', dietMembersFile.getAbsolutePath(),
+      '--pg-conf', file('r8-rules.txt').getAbsolutePath(),
+      fatMembersJar.archivePath
+  ]
+
+  dependsOn(fatMembersJar)
+}
+
 def binaryMembersFile = new File(buildDir, "libs/dex-member-list-binary.jar")
 task binaryMembersJar() {
-  dependsOn(fatMembersJar)
+  dependsOn(dietMembersJar)
 
-  inputs.file(fatMembersJar.archivePath)
+  inputs.file(dietMembersFile)
   outputs.file(binaryMembersFile)
 
   doLast {
-    def fatJarFile = fatMembersJar.archivePath
-
     binaryMembersFile.getParentFile().mkdirs()
     binaryMembersFile.delete()
     binaryMembersFile << "#!/bin/sh\n\nexec java -jar \$0 \"\$@\"\n\n"
-    fatJarFile.withInputStream { binaryMembersFile.append it }
+    dietMembersFile.withInputStream { binaryMembersFile.append it }
 
     binaryMembersFile.setExecutable true, false
   }
@@ -108,20 +135,35 @@ task fatMethodsJar(type: Jar, dependsOn: 'compileJava') {
   }
 }
 
+def dietMethodsFile = new File(buildDir, "libs/dex-method-list-shrunk.jar")
+def dietMethodsJar = tasks.create('dietMethodsJar', JavaExec) {
+  classpath configurations.r8
+
+  main = 'com.android.tools.r8.R8'
+  args = [
+      '--lib', new File(Jvm.current().jre.homeDir, "lib/rt.jar").getAbsolutePath(), // TODO restricts to JDK 8
+      '--release',
+      '--classfile',
+      '--output', dietMethodsFile.getAbsolutePath(),
+      '--pg-conf', file('r8-rules.txt').getAbsolutePath(),
+      fatMethodsJar.archivePath
+  ]
+
+  dependsOn(fatMethodsJar)
+}
+
 def binaryMethodsFile = new File(buildDir, "libs/dex-method-list-binary.jar")
 task binaryMethodsJar() {
-  dependsOn(fatMethodsJar)
+  dependsOn(dietMethodsJar)
 
-  inputs.file(fatMethodsJar.archivePath)
+  inputs.file(dietMethodsFile)
   outputs.file(binaryMethodsFile)
 
   doLast {
-    def fatJarFile = fatMethodsJar.archivePath
-
     binaryMethodsFile.getParentFile().mkdirs()
     binaryMethodsFile.delete()
     binaryMethodsFile << "#!/bin/sh\n\nexec java -jar \$0 \"\$@\"\n\n"
-    fatJarFile.withInputStream { binaryMethodsFile.append it }
+    dietMethodsFile.withInputStream { binaryMethodsFile.append it }
 
     binaryMethodsFile.setExecutable true, false
   }
@@ -146,20 +188,35 @@ task fatFieldsJar(type: Jar, dependsOn: 'compileJava') {
   }
 }
 
+def dietFieldsFile = new File(buildDir, "libs/dex-field-list-shrunk.jar")
+def dietFieldsJar = tasks.create('dietFieldsJar', JavaExec) {
+  classpath configurations.r8
+
+  main = 'com.android.tools.r8.R8'
+  args = [
+      '--lib', new File(Jvm.current().jre.homeDir, "lib/rt.jar").getAbsolutePath(), // TODO restricts to JDK 8
+      '--release',
+      '--classfile',
+      '--output', dietFieldsFile.getAbsolutePath(),
+      '--pg-conf', file('r8-rules.txt').getAbsolutePath(),
+      fatFieldsJar.archivePath
+  ]
+
+  dependsOn(fatFieldsJar)
+}
+
 def binaryFieldsFile = new File(buildDir, "libs/dex-field-list-binary.jar")
 task binaryFieldsJar() {
-  dependsOn(fatFieldsJar)
+  dependsOn(dietFieldsJar)
 
-  inputs.file(fatFieldsJar.archivePath)
+  inputs.file(dietFieldsFile)
   outputs.file(binaryFieldsFile)
 
   doLast {
-    def fatJarFile = fatFieldsJar.archivePath
-
     binaryFieldsFile.getParentFile().mkdirs()
     binaryFieldsFile.delete()
     binaryFieldsFile << "#!/bin/sh\n\nexec java -jar \$0 \"\$@\"\n\n"
-    fatJarFile.withInputStream { binaryFieldsFile.append it }
+    dietFieldsFile.withInputStream { binaryFieldsFile.append it }
 
     binaryFieldsFile.setExecutable true, false
   }

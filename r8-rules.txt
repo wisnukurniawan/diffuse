@@ -1,0 +1,8 @@
+-keepclasseswithmembers,allowoptimization class * {
+  public static void main(java.lang.String[]);
+}
+
+# We want to be able to unzip the jar on Mac OS / Windows easily for inspection.
+-dontusemixedcaseclassnames
+
+-keep class com.android.tools.r8.** { *; }
