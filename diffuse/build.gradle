@@ -1,5 +1,6 @@
 apply plugin: 'java-library'
 apply plugin: 'org.jetbrains.kotlin.jvm'
+apply plugin: 'com.palantir.graal'
 
 sourceCompatibility = JavaVersion.VERSION_1_6
 targetCompatibility = JavaVersion.VERSION_1_6
@@ -17,6 +18,12 @@ dependencies {
 
   testImplementation deps.junit
   testImplementation deps.truth
+}
+
+graal {
+  mainClass 'com.jakewharton.diffuse.Diffuse'
+  outputName 'diffuse'
+  option '-H:+ReportExceptionStackTraces'
 }
 
 def fatDiffuseJarProvider = tasks.register('fatDiffuseJar', Jar) { task ->
