@@ -9,7 +9,7 @@ is an example of updating the [Dagger](https://github.com/google/dagger/) librar
 [SDK Search](https://github.com/JakeWharton/SdkSearch/) app:
 
 ```
-$ diffuse diff sdk-search-release-1.apk sdk-search-release-2.apk
+$ diffuse diff sdk-search-release-1.apk sdk-search-release-2.apk > result.txt
 
 OLD: sdk-search-release-1.apk (signature: V2)
 NEW: sdk-search-release-2.apk (signature: V2)
@@ -120,13 +120,9 @@ METHODS:
 Usage
 -----
 
-Coming soon.
-
-
-Download
---------
-
-Coming soon.
+$ ./gradlew assemble
+$ ./gradlew build
+$ diffuse diff sdk-search-release-1.apk sdk-search-release-2.apk > result.txt
 
 
 License
