@@ -119,11 +119,11 @@ METHODS:
 
 Usage
 -----
-
+```
 $ ./gradlew assemble
 $ ./gradlew build
 $ diffuse diff sdk-search-release-1.apk sdk-search-release-2.apk > result.txt
-
+```
 
 License
 -------
